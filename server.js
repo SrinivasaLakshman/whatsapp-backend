@@ -19,6 +19,12 @@ const pusher = new Pusher({
 // middleware
 app.use(express.json());
 
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Headers", "*");
+    next();
+})
+
 // DB config
 const connection_url = 'mongodb+srv://admin:31123449@cluster0.cb49gax.mongodb.net/whatsappdb?retryWrites=true&w=majority'
 
@@ -38,7 +44,17 @@ db.once('open', () => {
 
     changeStream.on("change", (change) => {
         console.log(change);
-    })
+
+        if(change.operationType == 'insert') {
+            const messageDetails = change.fullDocument;
+            pusher.trigger('messages', 'inserted', {
+                    name: messageDetails.user,
+                    message: messageDetails.message,
+            });
+        } else {
+            console.log("Error triggering pusher");
+        }
+    });
 });
 
 // API routes
