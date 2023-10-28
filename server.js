@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import Messages from "./dbMessages.js";
 import Pusher from "pusher";
 import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config();
 
 // app config
 const app = express()
@@ -28,9 +30,7 @@ app.use((req, res, next) => {
 })
 
 // DB config
-const connection_url = 'mongodb+srv://admin:31123449@cluster0.cb49gax.mongodb.net/whatsappdb?retryWrites=true&w=majority'
-
-mongoose.connect(connection_url, {
+mongoose.connect(process.env.MONGO, {
     useCreateIndex: true,
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -50,8 +50,10 @@ db.once('open', () => {
         if(change.operationType == 'insert') {
             const messageDetails = change.fullDocument;
             pusher.trigger('messages', 'inserted', {
-                    name: messageDetails.user,
-                    message: messageDetails.message,
+                name: messageDetails.user,
+                message: messageDetails.message,
+                timestamp: messageDetails.timestamp,
+                received: messageDetails.received,
             });
         } else {
             console.log("Error triggering pusher");
